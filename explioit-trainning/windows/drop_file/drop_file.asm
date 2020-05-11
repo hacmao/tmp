@@ -62,7 +62,7 @@ main:
 
     ; CreateFile(filename,                // name of the write
 	;	GENERIC_WRITE,          // open for writing
-	;	0,                      // do not share
+	;	FILE_SHARE_READ,                      // do not share
 	;	NULL,                   // default security
 	;	CREATE_NEW,             // create new file only
 	;	FILE_ATTRIBUTE_NORMAL,  // normal file
@@ -84,6 +84,7 @@ main:
     mov dl, 0x4 
     shl rdx, 28
     xor r8, r8
+    inc r8
     sub rsp, 0x50 
     xor r9, r9 
     mov r9b, 0x80 
@@ -146,25 +147,7 @@ returnData :
     ; CloseHandle(hFile) 
     mov rcx, r15 
     call r13 
-
-    ; GetProcAddress(kernel32.dll, 'ExitProcess') 
-    xor rdx, rdx 
-    mov dl, 0x65 
-    push rdx 
-    mov rdx, 0x6c69466574697257
-    push rdx 
-    mov rdx, rsp 
-    mov rcx, rbx 
-    sub rsp, 0x30 
-    call r14 
-    add rsp, 0x30 
-    mov rdi, rax
-
     
-    
-    ; ExitProcess(0) 
-    xor rcx, rcx 
-    call rdi 
 
 ; ------------------------------------------------------------------------------------
 getData : 
