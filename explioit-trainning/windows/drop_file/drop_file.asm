@@ -45,44 +45,28 @@ main:
     mov r14d, [rsi + rcx * 4]            ; rva address of winexec 
     add r14, rbx                        ; address of GetProcAddress 
 
-    ; get LoadLibraryA address by calling GetProcAddress
+    ; get CreateFileA address by calling GetProcAddress
     ; GetProcAddress(lib_base, function_name) 
     xor rdx, rdx 
-    mov edx, 0x41797261 
+    mov edx, 0x41656caa 
+    shr edx, 8  
     push rdx 
-    mov rdx, 0x7262694c64616f4c         ; LoadLibraryA 
+    mov rdx, 0x6946657461657243         ; LoadLibraryA 
     push rdx 
     mov rdx, rsp   
     mov rcx, rbx 
     sub rsp, 0x30 
     call r14 
     add rsp, 0x30 
-    mov rsi, rax                        ; address of LoadLibraryA functions 
+    mov rsi, rax                        ; address of CreateFileA functions 
 
-    ; Load msvcrt.dll to use fopen, fwrite, fclose 
-    xor rcx, rcx 
-    mov cx, 0x6c6c 
-    push rcx 
-    mov rcx, 0x642e74726376736d 
-    push rcx 
-    mov rcx, rsp 
-    sub rsp, 0x30 
-    call rsi 
-    add rsp, 0x30 
-    mov r15, rax                        ; address of msvcrt.dll handle 
-
-    ; GetProcAddress(msvcrt, "fopen") 
-    mov rdx, 0x6e65706f66aaaaaa         
-    shr rdx, 24 
-    push rdx 
-    mov rdx, rsp 
-    mov rcx, r15                        ; find address in msvcrt.dll 
-    sub rsp, 0x30 
-    call r14  
-    add rsp, 0x30 
-    mov rdi, rax 
-    
-    ; fopen("900150983cd24fb0d6963f7d28e17f72", "w+") 
+    ; CreateFile(filename,                // name of the write
+	;	GENERIC_WRITE,          // open for writing
+	;	0,                      // do not share
+	;	NULL,                   // default security
+	;	CREATE_NEW,             // create new file only
+	;	FILE_ATTRIBUTE_NORMAL,  // normal file
+	;	NULL);
     xor rcx, rcx 
     push rcx 
     mov rcx, 0x3237663731653832 
@@ -97,53 +81,77 @@ main:
     push rcx 
     mov rcx, rsp 
     xor rdx, rdx 
-    mov dx, 0x2b77 
-    push rdx 
-    mov rdx, rsp 
-    sub rsp, 0x60 
-    call rdi 
-    add rsp, 0x60 
-    mov r13, rax                        ; fd 
+    mov dl, 0x4 
+    shl rdx, 28
+    xor r8, r8
+    sub rsp, 0x50 
+    xor r9, r9 
+    mov r9b, 0x80 
+    mov [rsp + 0x28], r9b 
+    xor r9, r9 
+    inc r9  
+    mov [rsp + 0x20], r9
+    xor r9 , r9
+    mov [rsp + 0x30], r9 
+    call rsi 
+    add rsp, 0x50 
+    mov r15, rax                        ; hFile 
 
-    ; GetProcAddress(msvcrt, "fprintf") 
-    mov rdx, 0x66746e69727066aa 
-    shr rdx, 8 
+    ; GetProcAddress(kernel32.dll, 'WriteFile') 
+    xor rdx, rdx 
+    mov edx, 0x65 
     push rdx 
-    mov rdx, rsp 
-    mov rcx, r15 
-    sub rsp, 0x30
-    call r14 
-    add rsp, 0x30 
-    mov rdi, rax                    
-
-    ; fprintf(fp, data) 
-    mov rcx, r13 
-    jmp getData 
-returnData : 
-    pop rdx 
-    call rdi 
-
-    ; GetProcAddress(msvcrt, "fclose") 
-    mov rdx, 0x65736f6c6366aaaa
-    shr rdx, 16 
+    mov rdx, 0x6c69466574697257         ; WriteFile 
     push rdx 
-    mov rdx, rsp 
-    mov rcx, r15 
+    mov rdx, rsp   
+    mov rcx, rbx 
     sub rsp, 0x30 
     call r14 
     add rsp, 0x30 
-    mov rdi, rax 
+    mov r13, rax  
 
-    ; fclose(fd) 
-    mov rcx, r13 
-    call rdi 
+    ;   WriteFile(
+	;	hFile,           // open file handle
+	;	DataBuffer,      // start of data to write
+	;	dwBytesToWrite,  // number of bytes to write
+	;	&dwBytesWritten, // number of bytes that were written
+	;	NULL)
+    mov rcx, r15 
+    jmp getData 
+returnData : 
+    pop rdx 
+    xor r8, r8 
+    sub rsp, 0x50
+    mov r9, rsp 
+    add r9, 0x30  
+    mov [rsp + 0x20], r8 
+    mov r8b, 100 
+    call r13 
+    add rsp, 0x30 
+
+    ; GetProcAddress(kernel32.dll, 'CloseHandle') 
+    xor rdx, rdx 
+    mov edx, 0x656c64aa
+    shr edx, 8  
+    push rdx 
+    mov rdx, 0x6e614865736f6c43         ; CloseHandle 
+    push rdx 
+    mov rdx, rsp   
+    mov rcx, rbx 
+    sub rsp, 0x30 
+    call r14 
+    add rsp, 0x30 
+    mov r13, rax   
+
+    ; CloseHandle(hFile) 
+    mov rcx, r15 
+    call r13 
 
     ; GetProcAddress(kernel32.dll, 'ExitProcess') 
     xor rdx, rdx 
-    mov edx, 0x737365aa 
-    shr edx, 8 
+    mov dl, 0x65 
     push rdx 
-    mov rdx, 0x636f725074697845
+    mov rdx, 0x6c69466574697257
     push rdx 
     mov rdx, rsp 
     mov rcx, rbx 
@@ -152,6 +160,8 @@ returnData :
     add rsp, 0x30 
     mov rdi, rax
 
+    
+    
     ; ExitProcess(0) 
     xor rcx, rcx 
     call rdi 

