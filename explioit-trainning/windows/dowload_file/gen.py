@@ -1,4 +1,4 @@
-f = open("drop_file.sc", "rb")
+f = open("download_file.sc", "rb")
 data = f.read() 
 
 from binascii import hexlify 

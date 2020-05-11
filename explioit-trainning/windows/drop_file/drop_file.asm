@@ -99,7 +99,7 @@ main:
 
     ; GetProcAddress(kernel32.dll, 'WriteFile') 
     xor rdx, rdx 
-    mov edx, 0x65 
+    mov dl, 0x65 
     push rdx 
     mov rdx, 0x6c69466574697257         ; WriteFile 
     push rdx 
@@ -125,7 +125,7 @@ returnData :
     mov r9, rsp 
     add r9, 0x30  
     mov [rsp + 0x20], r8 
-    mov r8b, 100 
+    mov r8w, 0x220  
     call r13 
     add rsp, 0x30 
 
