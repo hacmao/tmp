@@ -5,83 +5,54 @@ import string
 import random
 import base64
 import socketserver as SocketServer
-from Dsa import DSA_server
+
 
 
 host, port = 'localhost', 31340
+banner = b"""
+  ____  _  __ _____ ______ _____    _____ _______ ______   ___   ___ ___   ___  
+ |  _ \| |/ // ____|  ____/ ____|  / ____|__   __|  ____| |__ \ / _ \__ \ / _ \ 
+ | |_) | ' /| (___ | |__ | |      | |       | |  | |__       ) | | | | ) | | | |
+ |  _ <|  <  \___ \|  __|| |      | |       | |  |  __|     / /| | | |/ /| | | |
+ | |_) | . \ ____) | |___| |____  | |____   | |  | |       / /_| |_| / /_| |_| |
+ |____/|_|\_\_____/|______\_____|  \_____|  |_|  |_|      |____|\___/____|\___/  
 
-banner = b"""********************Welcome to server********************
-1.Signed data
-2.Verify
-3.Public key
-4.Exit
+
+[****] Challenge : Simple math - You must answer 1337 questions to get flag.  
+
 """
 
-invalid_mess=b"""
-:::::::::::::::::::::
-::                 ::
-:: Invalid message ::
-::                 ::
-:::::::::::::::::::::
-"""
-
-valid_mess=b"""
-:::::::::::::::::::::
-::                 ::
-::  Valid message  ::
-::                 ::
-:::::::::::::::::::::
-"""
-rx_signature = re.compile(b'\((.*),(.*)\)')
+def random_math() : 
+    num1 = random.randint(0, 1000000)
+    num2 = random.randint(0, 1000000) 
+    method = random.choice([" + ", " - ", " * "]) 
+    challenge = str(num1) + method + str(num2)
+    return challenge.encode()
+    
 class ThreadedTCPServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 	allow_reuse_address = True
 
 class ThreadedTCPRequestHandler(SocketServer.BaseRequestHandler):
 	def handle(self):
-		server = DSA_server(2048)
-		server.generate()
-		while True:
-			try:
-				self.request.sendall(banner)
-				choice = int(self.request.recv(1<<16).strip())
-				if choice==1:
-					self.request.sendall(b"Message: ")
-					mess = self.request.recv(1<<16).strip()
-					if b'Give me the flag!!' in mess:
-						self.request.sendall(b"Wait,that illegal!\n")
-						self.request.close()
-						break
-					signature = server.sign(mess)
-					self.request.sendall(f"Signature: {signature}\n".encode())
-				elif choice==2:
-					self.request.sendall(b"Message: ")	
-					mess = self.request.recv(1<<16).strip()
-					self.request.sendall(b"Signature: ")
-					signature = (int(i) for i in rx_signature.findall(self.request.recv(1<<16).strip())[0])
-					if server.verify(mess,signature):
-						self.request.sendall(valid_mess)
-						if b'Give me the flag!!' in mess:
-							self.request.sendall(f'Here you are {open("flag.txt").read()}\n'.encode())	
-						else:	
-							self.request.sendall(f'Your mess: {mess.decode()}\n'.encode())	
-					else : self.request.sendall(invalid_mess)	
-				elif choice==3:
-					# self.request.sendall(b"Public key:\n")	
-					self.request.sendall(f"{server}\n".encode())	
+		self.request.sendall(banner)
+		for i in range(1337) : 
+			challenge = random_math()
+			self.request.sendall(b"[*] Challenge %i : %s \n   > Answer : " % (i + 1, challenge)) 
+			answer = self.request.recv(4096).strip() 
+			try: 
+				if int(answer) == eval(challenge) : 
+					self.request.sendall(b"[+] Goodjob.\n")
 				else : 
-					self.request.sendall(b"Bye bye\n")
-					self.request.close()
-					break
-				
-			except:
-				try:
-					self.request.sendall(b"Illegal input :(\n")
-					self.request.close()
-					break
-				except:
-					break
-				
-	
+					self.request.sendall(b"[-] Wrong answer.\n")
+					return 
+			except : 
+				self.request.sendall(b"[X] Don't try to hack us ^_^\n")
+				return
+
+		f = open("flag.txt", "rb") 
+		flag = f.read()
+		self.request.sendall(flag)
+		f.close()
 	
 if __name__=="__main__":
 	# test()
